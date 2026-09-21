@@ -1,0 +1,77 @@
+import pytest
+from playwright.sync_api import expect
+from pages.login_page import LoginPage
+from pages.dashboard_page import DashboardPage
+from utils.test_data import generate_employee_data
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
+@pytest.fixture(scope="session")
+def auth_state(browser):
+    context = browser.new_context()
+    page = context.new_page()
+
+    page.goto(os.getenv("ORANGEHRM_BASE_URL"))
+
+    login_page = LoginPage(page)
+    dashboard = login_page.login(
+        os.getenv("ORANGEHRM_USERNAME"),
+        os.getenv("ORANGEHRM_PASSWORD")
+    )
+
+    expect(dashboard.dashboard_header).to_be_visible()
+
+    expect(page.get_by_role("heading", name="Dashboard")).to_be_visible()
+
+    state = context.storage_state()
+
+    context.close()
+
+    return state
+
+
+@pytest.fixture
+def authenticated_page(browser, auth_state):
+    context = browser.new_context(storage_state=auth_state)
+
+    page = context.new_page()
+    page.goto(os.getenv("ORANGEHRM_BASE_URL"))
+
+    yield page
+
+    context.close()
+
+
+@pytest.fixture
+def create_employee(authenticated_page):
+    employee_data = generate_employee_data()
+
+    dashboard = DashboardPage(authenticated_page)
+    employee_list = dashboard.go_to_pim()
+    add_employee = employee_list.go_to_add_employee()
+
+    add_employee.enter_first_name(employee_data["first_name"])
+    add_employee.enter_middle_name(employee_data["middle_name"])
+    add_employee.enter_last_name(employee_data["last_name"])
+    add_employee.enter_employee_id(employee_data["employee_id"])
+
+    employee_details = add_employee.save()
+
+    yield employee_data, employee_details
+
+    employee_list = employee_details.go_to_employee_list()
+    employee_list.search_employee_by_id(employee_data["employee_id"])
+
+    if employee_list.employee_result_rows.count() == 1:
+        # TODO: Replace UI cleanup with API DELETE once API layer is implemented.
+        employee_list.delete_employee()
+
+        employee_list.search_employee_by_id(
+            employee_data["employee_id"]
+        )
+
+        assert employee_list.employee_result_rows.count() == 0
