@@ -5,6 +5,7 @@ from pages.dashboard_page import DashboardPage
 from utils.test_data import generate_employee_data
 import os
 from dotenv import load_dotenv
+from api.orangehrm_api import OrangeHRMApi
 
 
 load_dotenv()
@@ -75,3 +76,44 @@ def create_employee(authenticated_page):
         )
 
         assert employee_list.employee_result_rows.count() == 0
+
+
+@pytest.fixture
+def orangehrm_api(playwright, auth_state):
+    request = playwright.request.new_context(
+        storage_state=auth_state
+    )
+    api = OrangeHRMApi(
+        request=request,
+        base_url=os.environ["ORANGEHRM_BASE_URL"],
+    )
+    yield api
+    request.dispose()
+
+@pytest.fixture
+def create_employee_api(orangehrm_api):
+    employee_data = generate_employee_data()
+
+    create_response = orangehrm_api.create_employee(employee_data)
+
+    assert create_response.status == 200
+
+    employee_details = create_response.json()
+    emp_number = employee_details["data"]["empNumber"]
+
+    yield employee_data, employee_details
+
+    get_response = orangehrm_api.get_employee(emp_number)
+
+    if get_response.status == 200:
+        delete_response = orangehrm_api.delete_employee(emp_number)
+
+        if delete_response.status == 200:
+            print(f"CLEANUP SUCCESS: Employee {emp_number} deleted")
+        else:
+            print(
+                f"CLEANUP FAILED: Employee {emp_number} "
+                f"could not be deleted. Status: {delete_response.status}"
+            )
+    else:
+        print(f"CLEANUP NOT REQUIRED: Employee {emp_number} not found")
