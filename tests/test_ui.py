@@ -3,9 +3,9 @@ from pages.dashboard_page import DashboardPage
 
 
 def test_authenticated_page(authenticated_page):
-    expect(
-        authenticated_page.get_by_role("heading", name="Dashboard")
-    ).to_be_visible()
+    dashboard = DashboardPage(authenticated_page)
+
+    expect(dashboard.dashboard_header).to_be_visible()
 
 
 def test_search_employee_by_id(authenticated_page):

@@ -4,9 +4,34 @@ from playwright.sync_api import APIRequestContext
 class OrangeHRMApi:
     EMPLOYEES_ENDPOINT = "/web/index.php/api/v2/pim/employees"
 
-    def __init__(self, request: APIRequestContext, base_url: str):
+    def __init__(
+        self,
+        request: APIRequestContext,
+        base_url: str,
+        refresh_request,
+    ):
         self.request = request
         self.base_url = base_url
+        self.refresh_request = refresh_request
+
+    def _request(self, method, url, **kwargs):
+        response = self.request.fetch(
+            url,
+            method=method,
+            **kwargs,
+        )
+
+        if response.status in (401, 403):
+            self.request.dispose()
+            self.request = self.refresh_request()
+
+            response = self.request.fetch(
+                url,
+                method=method,
+                **kwargs,
+            )
+
+        return response
 
     def get_employees(self, limit=None, offset=None):
         params = {}
@@ -17,14 +42,16 @@ class OrangeHRMApi:
         if offset is not None:
             params["offset"] = offset
 
-        return self.request.get(
+        return self._request(
+            "GET",
             f"{self.base_url}{self.EMPLOYEES_ENDPOINT}",
             params=params,
         )
 
     def get_employee(self, emp_number):
-        return self.request.get(
-            f"{self.base_url}{self.EMPLOYEES_ENDPOINT}/{emp_number}"
+        return self._request(
+            "GET",
+            f"{self.base_url}{self.EMPLOYEES_ENDPOINT}/{emp_number}",
         )
 
     def create_employee(self, employee_data):
@@ -36,7 +63,8 @@ class OrangeHRMApi:
             "employeeId": employee_data["employee_id"],
         }
 
-        return self.request.post(
+        return self._request(
+            "POST",
             f"{self.base_url}{self.EMPLOYEES_ENDPOINT}",
             data=payload,
         )
@@ -46,12 +74,20 @@ class OrangeHRMApi:
             "ids": [emp_number]
         }
 
-        return self.request.delete(
+        return self._request(
+            "DELETE",
             f"{self.base_url}{self.EMPLOYEES_ENDPOINT}",
             data=payload,
         )
 
-    def update_employee(self, emp_number, employee_id, first_name, middle_name, last_name):
+    def update_employee(
+        self,
+        emp_number,
+        employee_id,
+        first_name,
+        middle_name,
+        last_name,
+    ):
         payload = {
             "firstName": first_name,
             "middleName": middle_name,
@@ -59,7 +95,8 @@ class OrangeHRMApi:
             "employeeId": employee_id,
         }
 
-        return self.request.put(
+        return self._request(
+            "PUT",
             f"{self.base_url}{self.EMPLOYEES_ENDPOINT}/{emp_number}/personal-details",
             data=payload,
         )

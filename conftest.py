@@ -36,8 +36,6 @@ def auth_state(browser):
 
     expect(dashboard.dashboard_header).to_be_visible()
 
-    expect(page.get_by_role("heading", name="Dashboard")).to_be_visible()
-
     state = context.storage_state()
 
     context.close()
@@ -54,9 +52,49 @@ def authenticated_page(browser, auth_state, request):
 
     page.goto(Config.get("ORANGEHRM_BASE_URL"))
 
+    if "/auth/login" in page.url:
+        context.close()
+
+        refresh_auth_state(browser, auth_state)
+
+        context = browser.new_context(storage_state=auth_state)
+        page = context.new_page()
+
+        request.node._playwright_page = page
+
+        page.goto(Config.get("ORANGEHRM_BASE_URL"))
+
+        if "/auth/login" in page.url:
+            context.close()
+            raise AssertionError(
+                "Authentication refresh failed: application redirected to login page"
+            )
+
     yield page
 
     context.close()
+
+
+def refresh_auth_state(browser, auth_state):
+    context = browser.new_context()
+    page = context.new_page()
+
+    page.goto(Config.get("ORANGEHRM_BASE_URL"))
+
+    login_page = LoginPage(page)
+    dashboard = login_page.login(
+        Config.get("ORANGEHRM_USERNAME"),
+        Config.get("ORANGEHRM_PASSWORD"),
+    )
+
+    expect(dashboard.dashboard_header).to_be_visible()
+
+    new_state = context.storage_state()
+
+    context.close()
+
+    auth_state.clear()
+    auth_state.update(new_state)
 
 
 @pytest.fixture
@@ -90,16 +128,27 @@ def create_employee(authenticated_page):
 
 
 @pytest.fixture
-def orangehrm_api(playwright, auth_state):
+def orangehrm_api(playwright, browser, auth_state):
     request = playwright.request.new_context(
         storage_state=auth_state
     )
+
+    def refresh_request():
+        refresh_auth_state(browser, auth_state)
+
+        return playwright.request.new_context(
+            storage_state=auth_state
+        )
+
     api = OrangeHRMApi(
         request=request,
         base_url=Config.get("ORANGEHRM_BASE_URL"),
+        refresh_request=refresh_request,
     )
+
     yield api
-    request.dispose()
+
+    api.request.dispose()
 
 @pytest.fixture
 def create_employee_api(orangehrm_api):
