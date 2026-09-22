@@ -6,6 +6,7 @@ from utils.test_data import generate_employee_data
 import os
 from dotenv import load_dotenv
 from api.orangehrm_api import OrangeHRMApi
+from db.database_client import DatabaseClient
 
 
 load_dotenv()
@@ -116,3 +117,9 @@ def create_employee_api(orangehrm_api):
             )
     else:
         print(f"CLEANUP NOT REQUIRED: Employee {emp_number} not found")
+
+@pytest.fixture
+def db():
+    database = DatabaseClient()
+    yield database
+    database.close()
