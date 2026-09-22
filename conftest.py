@@ -3,26 +3,34 @@ from playwright.sync_api import expect
 from pages.login_page import LoginPage
 from pages.dashboard_page import DashboardPage
 from utils.test_data import generate_employee_data
-import os
-from dotenv import load_dotenv
 from api.orangehrm_api import OrangeHRMApi
 from db.database_client import DatabaseClient
+from config import Config
 
 
-load_dotenv()
+def pytest_addoption(parser):
+    parser.addoption(
+        "--env",
+        action="store",
+        default="qa",
+        help="Environment to run tests against",
+    )
 
+@pytest.fixture(scope="session", autouse=True)
+def set_environment(request):
+    Config.environment = request.config.getoption("--env")
 
 @pytest.fixture(scope="session")
 def auth_state(browser):
     context = browser.new_context()
     page = context.new_page()
 
-    page.goto(os.getenv("ORANGEHRM_BASE_URL"))
+    page.goto(Config.get("ORANGEHRM_BASE_URL"))
 
     login_page = LoginPage(page)
     dashboard = login_page.login(
-        os.getenv("ORANGEHRM_USERNAME"),
-        os.getenv("ORANGEHRM_PASSWORD")
+        Config.get("ORANGEHRM_USERNAME"),
+        Config.get("ORANGEHRM_PASSWORD")
     )
 
     expect(dashboard.dashboard_header).to_be_visible()
@@ -41,7 +49,7 @@ def authenticated_page(browser, auth_state):
     context = browser.new_context(storage_state=auth_state)
 
     page = context.new_page()
-    page.goto(os.getenv("ORANGEHRM_BASE_URL"))
+    page.goto(Config.get("ORANGEHRM_BASE_URL"))
 
     yield page
 
@@ -85,7 +93,7 @@ def orangehrm_api(playwright, auth_state):
     )
     api = OrangeHRMApi(
         request=request,
-        base_url=os.environ["ORANGEHRM_BASE_URL"],
+        base_url=Config.get("ORANGEHRM_BASE_URL"),
     )
     yield api
     request.dispose()

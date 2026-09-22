@@ -1,19 +1,17 @@
 import mariadb
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from config import Config
 
 
 class DatabaseClient:
 
     def __init__(self):
         self.connection = mariadb.connect(
-            host=os.environ["DB_HOST"],
-            port=int(os.environ["DB_PORT"]),
-            user=os.environ["DB_USER"],
-            password=os.environ["DB_PASSWORD"],
-            database=os.environ["DB_NAME"],
+            host=Config.get("DB_HOST"),
+            port=int(Config.get("DB_PORT")),
+            user=Config.get("DB_USER"),
+            password=Config.get("DB_PASSWORD"),
+            database=Config.get("DB_NAME"),
         )
 
         self.cursor = self.connection.cursor(dictionary=True)
