@@ -6,6 +6,7 @@ from utils.test_data import generate_employee_data
 from api.orangehrm_api import OrangeHRMApi
 from db.database_client import DatabaseClient
 from config import Config
+from utils.screenshot import attach_failure_screenshot
 
 
 def pytest_addoption(parser):
@@ -45,10 +46,12 @@ def auth_state(browser):
 
 
 @pytest.fixture
-def authenticated_page(browser, auth_state):
+def authenticated_page(browser, auth_state, request):
     context = browser.new_context(storage_state=auth_state)
-
     page = context.new_page()
+
+    request.node._playwright_page = page
+
     page.goto(Config.get("ORANGEHRM_BASE_URL"))
 
     yield page
@@ -131,3 +134,16 @@ def db():
     database = DatabaseClient()
     yield database
     database.close()
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+
+    if report.when not in ("setup", "call") or not report.failed:
+        return
+
+    page = getattr(item, "_playwright_page", None)
+
+    if page is not None:
+        attach_failure_screenshot(report, page)
