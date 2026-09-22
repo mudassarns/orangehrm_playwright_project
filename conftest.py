@@ -68,7 +68,6 @@ def create_employee(authenticated_page):
     employee_list.search_employee_by_id(employee_data["employee_id"])
 
     if employee_list.employee_result_rows.count() == 1:
-        # TODO: Replace UI cleanup with API DELETE once API layer is implemented.
         employee_list.delete_employee()
 
         employee_list.search_employee_by_id(
