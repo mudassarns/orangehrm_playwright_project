@@ -1,3 +1,8 @@
+import pytest
+
+pytestmark = pytest.mark.db
+
+
 def test_employee_exists(db):
     employee_id = "0001"
 

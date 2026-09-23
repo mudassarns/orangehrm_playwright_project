@@ -1,5 +1,8 @@
 from playwright.sync_api import expect
 from pages.dashboard_page import DashboardPage
+import pytest
+
+pytestmark = pytest.mark.ui
 
 
 def test_authenticated_page(authenticated_page):

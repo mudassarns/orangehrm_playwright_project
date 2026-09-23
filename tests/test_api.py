@@ -6,6 +6,9 @@ from schemas.employee_schema import (
     validate_employee_schema,
     validate_employee_update_schema,
 )
+import pytest
+
+pytestmark = pytest.mark.api
 
 
 def test_get_employees(orangehrm_api):

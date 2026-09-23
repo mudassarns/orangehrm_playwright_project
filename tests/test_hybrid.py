@@ -1,5 +1,8 @@
 from playwright.sync_api import expect
 from pages.dashboard_page import DashboardPage
+import pytest
+
+pytestmark = pytest.mark.hybrid
 
 
 def test_api_created_employee_visible_in_ui(
