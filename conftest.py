@@ -10,7 +10,7 @@ from utils.screenshot import attach_failure_screenshot
 import logging
 
 logger = logging.getLogger(__name__)
-
+API_TIMEOUT = 10_000
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -158,14 +158,16 @@ def create_employee(authenticated_page):
 @pytest.fixture
 def orangehrm_api(playwright, browser, auth_state):
     request = playwright.request.new_context(
-        storage_state=auth_state
+        storage_state=auth_state,
+        timeout=API_TIMEOUT
     )
 
     def refresh_request():
         refresh_auth_state(browser, auth_state)
 
         return playwright.request.new_context(
-            storage_state=auth_state
+            storage_state=auth_state,
+            timeout=API_TIMEOUT
         )
 
     api = OrangeHRMApi(

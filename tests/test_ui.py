@@ -1,9 +1,22 @@
 from playwright.sync_api import expect
 from pages.dashboard_page import DashboardPage
 import pytest
+from config import Config
+from pages.login_page import LoginPage
 
 pytestmark = pytest.mark.ui
 
+
+def test_login(page):
+    page.goto(Config.get("ORANGEHRM_BASE_URL"))
+
+    login_page = LoginPage(page)
+    dashboard = login_page.login(
+        Config.get("ORANGEHRM_USERNAME"),
+        Config.get("ORANGEHRM_PASSWORD"),
+    )
+
+    expect(dashboard.dashboard_header).to_be_visible()
 
 def test_authenticated_page(authenticated_page):
     dashboard = DashboardPage(authenticated_page)
