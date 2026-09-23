@@ -1,4 +1,7 @@
 from playwright.sync_api import APIRequestContext
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class OrangeHRMApi:
@@ -21,7 +24,21 @@ class OrangeHRMApi:
             **kwargs,
         )
 
+        logger.info(
+            "API %s | %s | Status: %s",
+            method,
+            url,
+            response.status,
+        )
+
         if response.status in (401, 403):
+            logger.warning(
+                "API %s | Authentication failed with status %s | "
+                "Refreshing authentication state",
+                method,
+                response.status,
+            )
+
             self.request.dispose()
             self.request = self.refresh_request()
 
@@ -29,6 +46,12 @@ class OrangeHRMApi:
                 url,
                 method=method,
                 **kwargs,
+            )
+
+            logger.info(
+                "API %s | Retry status: %s",
+                method,
+                response.status,
             )
 
         return response

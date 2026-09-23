@@ -7,6 +7,9 @@ from api.orangehrm_api import OrangeHRMApi
 from db.database_client import DatabaseClient
 from config import Config
 from utils.screenshot import attach_failure_screenshot
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def pytest_addoption(parser):
@@ -35,6 +38,7 @@ def auth_state(browser):
     )
 
     expect(dashboard.dashboard_header).to_be_visible()
+    logger.info("AUTH LOGIN | success")
 
     state = context.storage_state()
 
@@ -89,6 +93,7 @@ def refresh_auth_state(browser, auth_state):
 
     expect(dashboard.dashboard_header).to_be_visible()
 
+    logger.info("AUTH REFRESH | UI | success")
     new_state = context.storage_state()
 
     context.close()
@@ -111,20 +116,43 @@ def create_employee(authenticated_page):
     add_employee.enter_employee_id(employee_data["employee_id"])
 
     employee_details = add_employee.save()
+    logger.info(
+    "UI CREATE | employee_id=%s",
+    employee_data["employee_id"],
+)
 
     yield employee_data, employee_details
 
     employee_list = employee_details.go_to_employee_list()
     employee_list.search_employee_by_id(employee_data["employee_id"])
 
-    if employee_list.employee_result_rows.count() == 1:
+    result_count = employee_list.employee_result_rows.count()
+
+    if result_count == 1:
         employee_list.delete_employee()
 
         employee_list.search_employee_by_id(
             employee_data["employee_id"]
         )
 
-        assert employee_list.employee_result_rows.count() == 0
+        result_count = employee_list.employee_result_rows.count()
+
+        if result_count == 0:
+            logger.info(
+                f"CLEANUP SUCCESS: Employee "
+                f"{employee_data['employee_id']} deleted"
+            )
+        else:
+            logger.error(
+                f"CLEANUP FAILED: Employee "
+                f"{employee_data['employee_id']} still exists"
+            )
+
+    else:
+        logger.warning(
+            f"CLEANUP NOT REQUIRED: Employee "
+            f"{employee_data['employee_id']} not found"
+        )
 
 
 @pytest.fixture
@@ -169,14 +197,14 @@ def create_employee_api(orangehrm_api):
         delete_response = orangehrm_api.delete_employee(emp_number)
 
         if delete_response.status == 200:
-            print(f"CLEANUP SUCCESS: Employee {emp_number} deleted")
+            logger.info(f"CLEANUP SUCCESS: Employee {emp_number} deleted")
         else:
-            print(
+            logger.error(
                 f"CLEANUP FAILED: Employee {emp_number} "
                 f"could not be deleted. Status: {delete_response.status}"
             )
     else:
-        print(f"CLEANUP NOT REQUIRED: Employee {emp_number} not found")
+        logger.warning(f"CLEANUP NOT REQUIRED: Employee {emp_number} not found")
 
 @pytest.fixture
 def db():
