@@ -32,5 +32,14 @@ jobs:
       - name: Install Playwright browsers
         run: python -m playwright install --with-deps
 
+      - name: Start Docker Stack for CI
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ secrets.QA_DB_PASSWORD }}
+          MARIADB_DATABASE: ""
+          MARIADB_USER: "orangehrm"
+          MARIADB_PASSWORD: ${{ secrets.QA_DB_PASSWORD }}
+        run: |
+          docker compose -f docker-orangehrm/docker-compose.yml up -d --wait
+
       - name: Validate test collection
         run: pytest --collect-only -q
