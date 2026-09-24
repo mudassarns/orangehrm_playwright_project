@@ -94,5 +94,25 @@ jobs:
           docker compose -f docker-orangehrm/docker-compose.yml exec -T \
             orangehrm php /var/www/html/installer/cli_install.php
 
+      - name: Verify OrangeHRM installation
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ secrets.QA_DB_PASSWORD }}
+          MARIADB_DATABASE: ${{ secrets.QA_DB_NAME }}
+        run: |
+          echo "Checking OrangeHRM database tables..."
+          docker compose -f docker-orangehrm/docker-compose.yml exec -T mariadb \
+            mariadb -u root -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE" \
+            -e "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema='$MARIADB_DATABASE';"
+
+          echo "Checking OrangeHRM login endpoint..."
+          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" "http://localhost:8080/web/index.php/auth/login")
+          echo "Login endpoint HTTP status: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "=== ORANGEHRM CONTAINER LOGS ==="
+            docker compose -f docker-orangehrm/docker-compose.yml logs --tail=200 orangehrm || true
+            exit 1
+          fi
+
       - name: Validate test collection
         run: pytest --collect-only -q
