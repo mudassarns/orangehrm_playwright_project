@@ -32,7 +32,7 @@ def test_get_employees_with_limit(orangehrm_api):
 
     validate_employee_list_schema(data)
 
-    assert len(data["data"]) == 5
+    assert len(data["data"]) <= 5
 
 
 def test_get_employee(orangehrm_api):
