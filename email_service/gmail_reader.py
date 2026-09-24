@@ -8,6 +8,8 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from config import Config
+from google.auth.credentials import TokenState
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +42,10 @@ class GmailReader:
     def _get_credentials(self):
         credentials = self._load_saved_credentials()
 
-        if credentials and credentials.valid:
+        if credentials and credentials.token_state is TokenState.FRESH:
             return credentials
 
-        if credentials and credentials.expired and credentials.refresh_token:
+        if credentials and credentials.refresh_token:
             return self._refresh_credentials(credentials)
 
         flow = InstalledAppFlow.from_client_secrets_file(
