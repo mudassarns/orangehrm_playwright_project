@@ -35,7 +35,13 @@ class EmployeeListPage:
 
     def search_employee_by_id(self, employee_id):
         self.employee_id.fill(employee_id)
-        self.search_button.click()
+
+        with self.page.expect_response(
+            lambda response:
+            "/web/index.php/api/v2/pim/employees" in response.url
+            and response.request.method == "GET"
+        ):
+            self.search_button.click()
 
     def open_employee_details(self):
         self.employee_result_rows.first.click()
