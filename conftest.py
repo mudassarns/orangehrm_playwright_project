@@ -123,7 +123,12 @@ def create_employee(authenticated_page):
 
     yield employee_data, employee_details
 
-    employee_list = employee_details.go_to_employee_list()
+    authenticated_page.goto(Config.get("ORANGEHRM_BASE_URL"))
+
+    dashboard = DashboardPage(authenticated_page)
+    expect(dashboard.dashboard_header).to_be_visible()
+
+    employee_list = dashboard.go_to_pim()
     employee_list.search_employee_by_id(employee_data["employee_id"])
 
     result_count = employee_list.employee_result_rows.count()
@@ -223,6 +228,9 @@ def pytest_runtest_makereport(item, call):
         return
 
     page = getattr(item, "_playwright_page", None)
+
+    if page is None:
+        page = item.funcargs.get("page")
 
     if page is not None:
         attach_failure_screenshot(report, page)
