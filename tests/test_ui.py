@@ -51,6 +51,7 @@ def test_create_employee(create_employee):
     employee_list.search_employee_by_id(
         employee_data["employee_id"]
     )
+    assert 1 == 2
 
     expect(employee_list.employee_result_rows).to_have_count(1)
     expect(
