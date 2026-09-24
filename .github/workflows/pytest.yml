@@ -114,5 +114,15 @@ jobs:
             exit 1
           fi
 
-      - name: Validate test collection
-        run: pytest --collect-only -q
+      - name: Run Tests
+        env:
+          QA_ORANGEHRM_BASE_URL: http://localhost:8080
+          QA_ORANGEHRM_USERNAME: ${{ secrets.QA_ORANGEHRM_USERNAME }}
+          QA_ORANGEHRM_PASSWORD: ${{ secrets.QA_ORANGEHRM_PASSWORD }}
+          QA_DB_HOST: ${{ secrets.QA_DB_HOST }}
+          QA_DB_PORT: ${{ secrets.QA_DB_PORT }}
+          QA_DB_NAME: ${{ secrets.QA_DB_NAME }}
+          QA_DB_USER: ${{ secrets.QA_DB_USER }}
+          QA_DB_PASSWORD: ${{ secrets.QA_DB_PASSWORD }}
+        run: |
+          pytest tests/test_ui.py -v -s
