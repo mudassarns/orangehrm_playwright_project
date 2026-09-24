@@ -17,6 +17,7 @@ def test_login(page):
     )
 
     expect(dashboard.dashboard_header).to_be_visible()
+    assert 1 == 2
 
 def test_authenticated_page(authenticated_page):
     dashboard = DashboardPage(authenticated_page)
@@ -37,6 +38,7 @@ def test_search_employee_by_id(authenticated_page):
     employee_details = employee_list.open_employee_details()
 
     expect(employee_details.personal_details_tab).to_be_visible()
+    assert 1 == 2
 
 
 def test_create_employee(create_employee):
