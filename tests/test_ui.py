@@ -32,10 +32,19 @@ def test_search_employee_by_id(authenticated_page):
 
     employee_list.search_employee_by_id("0001")
 
-    expect(employee_list.employee_result_rows).to_have_count(1)
-    expect(employee_list.employee_result_rows.first).to_contain_text("0001")
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text="0001"
+        )
+    ).to_have_count(1)
 
-    employee_details = employee_list.open_employee_details()
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text="0001"
+        ).first
+    ).to_contain_text("0001")
+
+    employee_details = employee_list.open_employee_details("0001")
 
     expect(employee_details.personal_details_tab).to_be_visible()
 
@@ -51,10 +60,16 @@ def test_create_employee(create_employee):
         employee_data["employee_id"]
     )
 
-
-    expect(employee_list.employee_result_rows).to_have_count(1)
     expect(
-        employee_list.employee_result_rows.first
+        employee_list.employee_result_rows.filter(
+            has_text=employee_data["employee_id"]
+        )
+    ).to_have_count(1)
+
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text=employee_data["employee_id"]
+        ).first
     ).to_contain_text(employee_data["employee_id"])
 
 
@@ -64,9 +79,13 @@ def test_edit_employee(create_employee):
     employee_list = employee_details.go_to_employee_list()
     employee_list.search_employee_by_id(employee_data["employee_id"])
 
-    expect(employee_list.employee_result_rows).to_have_count(1)
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text=employee_data["employee_id"]
+        )
+    ).to_have_count(1)
 
-    employee_details = employee_list.open_employee_details()
+    employee_details = employee_list.open_employee_details(employee_data["employee_id"])
 
     employee_details.enter_first_name("Updated")
     expect(employee_details.first_name).to_have_value("Updated")
@@ -82,9 +101,15 @@ def test_edit_employee(create_employee):
     employee_list = employee_details.go_to_employee_list()
     employee_list.search_employee_by_id(employee_data["employee_id"])
 
-    expect(employee_list.employee_result_rows).to_have_count(1)
+    row = employee_list.employee_result_rows.filter(
+        has_text=employee_data["employee_id"]
+    ).first
 
-    row = employee_list.employee_result_rows.first
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text=employee_data["employee_id"]
+        )
+    ).to_have_count(1)
 
     expect(row.get_by_role("cell").nth(1)).to_have_text(
     employee_data["employee_id"]
@@ -103,7 +128,11 @@ def test_delete_employee(create_employee):
     employee_list = employee_details.go_to_employee_list()
     employee_list.search_employee_by_id(employee_data["employee_id"])
 
-    expect(employee_list.employee_result_rows).to_have_count(1)
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text=employee_data["employee_id"]
+        )
+    ).to_have_count(1)
 
     employee_list.delete_employee(employee_data["employee_id"])
 

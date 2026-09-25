@@ -58,8 +58,11 @@ class EmployeeListPage:
 
         return matching_rows.count()
 
-    def open_employee_details(self):
-        self.employee_result_rows.first.click()
+    def open_employee_details(self, employee_id):
+        employee_row = self.employee_result_rows.filter(
+            has_text=employee_id
+        ).first
+        employee_row.click()
         return EmployeeDetailsPage(self.page)
 
     def go_to_add_employee(self):

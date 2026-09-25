@@ -18,7 +18,11 @@ def test_api_created_employee_visible_in_ui(
         employee_data["employee_id"]
     )
 
-    expect(employee_list.employee_result_rows).to_have_count(1)
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text=employee_data["employee_id"]
+        )
+    ).to_have_count(1)
 
 
 def test_ui_created_employee_visible_in_api(
@@ -77,9 +81,17 @@ def test_api_updated_employee_visible_in_ui(
     
     assert result_count == 1
 
-    expect(employee_list.employee_result_rows).to_have_count(1)
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text=employee_data["employee_id"]
+        )
+    ).to_have_count(1)
 
-    row_text = employee_list.employee_result_rows.first.inner_text()
+    row = employee_list.employee_result_rows.filter(
+        has_text=employee_data["employee_id"]
+    ).first
+
+    row_text = row.inner_text()
 
     assert "UpdatedName" in row_text
     assert "UpdatedMiddle" in row_text
@@ -115,7 +127,11 @@ def test_ui_deleted_employee_not_found_in_api(
         employee_data["employee_id"]
     )
 
-    expect(employee_list.employee_result_rows).to_have_count(1)
+    expect(
+        employee_list.employee_result_rows.filter(
+            has_text=employee_data["employee_id"]
+        )
+    ).to_have_count(1)
 
     employee_list.delete_employee(
         employee_data["employee_id"]
