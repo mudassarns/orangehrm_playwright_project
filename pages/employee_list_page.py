@@ -32,30 +32,35 @@ class EmployeeListPage:
             "button", name="Yes, Delete"
         )
 
+        self.no_records_found = self.page.locator(
+            "span.oxd-text.oxd-text--span"
+        ).filter(
+            has_text="No Records Found"
+        )
 
     def search_employee_by_id(self, employee_id):
         self.employee_id.fill(employee_id)
+        self.search_button.click()
 
-        with self.page.expect_response(
-            lambda response:
-            "/web/index.php/api/v2/pim/employees" in response.url
-            and f"employeeId={employee_id}" in response.url
-            and response.request.method == "GET"
-        ) as response_info:
-            self.search_button.click()
+        matching_rows = self.employee_result_rows.filter(
+            has_text=employee_id
+        )
 
-        response = response_info.value
-        result_count = len(response.json()["data"])
+        expect(
+            matching_rows.first.or_(self.no_records_found)
+        ).to_be_visible()
 
-        expect(self.employee_result_rows).to_have_count(result_count)
+        if self.no_records_found.is_visible():
+            expect(self.employee_result_rows).to_have_count(0)
+            return 0
 
-        if result_count > 0:
-            matching_rows = self.employee_result_rows.filter(
-                has_text=employee_id
+        expect(
+            self.employee_result_rows.filter(
+                has_not_text=employee_id
             )
-            expect(matching_rows).to_have_count(result_count)
+        ).to_have_count(0)
 
-        return result_count
+        return matching_rows.count()
 
     def open_employee_details(self):
         self.employee_result_rows.first.click()

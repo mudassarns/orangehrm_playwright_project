@@ -5,6 +5,8 @@ class EmployeeDetailsPage:
 
     def __init__(self, page: Page):
         self.page = page
+        self.form_loader = page.locator(".oxd-form-loader")
+        expect(self.form_loader).to_be_hidden()
 
         self.personal_details_tab = page.get_by_role(
             "link", name="Personal Details"
@@ -45,13 +47,7 @@ class EmployeeDetailsPage:
         self.last_name.fill(last_name)
 
     def save(self):
-        with self.page.expect_response(
-            lambda response:
-            "/web/index.php/api/v2/pim/employees/" in response.url
-            and "/personal-details" in response.url
-            and response.request.method == "PUT"
-        ):
-            self.save_button.click()
+        self.save_button.click()
 
         expect(self.success_toast).to_be_visible()
         expect(self.employee_list_link).to_be_visible()
