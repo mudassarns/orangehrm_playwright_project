@@ -71,9 +71,14 @@ def test_api_updated_employee_visible_in_ui(
     dashboard = DashboardPage(authenticated_page)
     employee_list = dashboard.go_to_pim()
 
-    employee_list.search_employee_by_id(
+    authenticated_page.reload()
+    expect(employee_list.employee_information_heading).to_be_visible()
+
+    result_count = employee_list.search_employee_by_id(
         employee_data["employee_id"]
     )
+    
+    assert result_count == 1
 
     expect(employee_list.employee_result_rows).to_have_count(1)
 
