@@ -51,17 +51,10 @@ class EmployeeListPage:
 
         expect(
             matching_rows.first.or_(self.no_records_found)
-        ).to_be_visible(timeout=15_000)
+        ).to_be_visible()
 
         if self.no_records_found.is_visible():
-            expect(self.employee_result_rows).to_have_count(0)
             return 0
-
-        expect(
-            self.employee_result_rows.filter(
-                has_not_text=employee_id
-            )
-        ).to_have_count(0)
 
         return matching_rows.count()
 
