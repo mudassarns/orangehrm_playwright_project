@@ -39,6 +39,9 @@ class EmployeeListPage:
         )
 
     def search_employee_by_id(self, employee_id):
+        self.page.reload()
+        expect(self.employee_information_heading).to_be_visible()
+
         self.employee_id.fill(employee_id)
         self.search_button.click()
 
