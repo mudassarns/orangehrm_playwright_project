@@ -52,11 +52,6 @@ class EmployeeListPage:
         expect(
             matching_rows.first.or_(self.no_records_found)
         ).to_be_visible()
-        print("ALL ROWS:", self.employee_result_rows.all_inner_texts())
-        print(
-            "MATCHING ROWS:",
-            matching_rows.all_inner_texts()
-        )
 
         if self.no_records_found.is_visible():
             expect(self.employee_result_rows).to_have_count(0)
