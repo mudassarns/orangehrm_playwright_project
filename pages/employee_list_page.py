@@ -1,4 +1,4 @@
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 from pages.employee_details_page import EmployeeDetailsPage
 from pages.add_employee_page import AddEmployeePage
 
@@ -39,9 +39,17 @@ class EmployeeListPage:
         with self.page.expect_response(
             lambda response:
             "/web/index.php/api/v2/pim/employees" in response.url
+            and f"employeeId={employee_id}" in response.url
             and response.request.method == "GET"
-        ):
+        ) as response_info:
             self.search_button.click()
+
+        response = response_info.value
+        result_count = len(response.json()["data"])
+
+        expect(self.employee_result_rows).to_have_count(result_count)
+
+        return result_count
 
     def open_employee_details(self):
         self.employee_result_rows.first.click()
@@ -51,8 +59,12 @@ class EmployeeListPage:
         self.add_employee_link.click()
         return AddEmployeePage(self.page)
 
-    def delete_employee(self):
-        delete_button = self.employee_result_rows.first.get_by_role(
+    def delete_employee(self, employee_id):
+        employee_row = self.employee_result_rows.filter(
+            has_text=employee_id
+        ).first
+
+        delete_button = employee_row.get_by_role(
             "button"
         ).filter(
             has=self.page.locator("i.bi-trash")

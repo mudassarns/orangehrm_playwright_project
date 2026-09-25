@@ -129,18 +129,19 @@ def create_employee(authenticated_page):
     expect(dashboard.dashboard_header).to_be_visible()
 
     employee_list = dashboard.go_to_pim()
-    employee_list.search_employee_by_id(employee_data["employee_id"])
 
-    result_count = employee_list.employee_result_rows.count()
+    result_count = employee_list.search_employee_by_id(
+        employee_data["employee_id"]
+    )
 
     if result_count == 1:
-        employee_list.delete_employee()
-
-        employee_list.search_employee_by_id(
+        employee_list.delete_employee(
             employee_data["employee_id"]
         )
 
-        result_count = employee_list.employee_result_rows.count()
+        result_count = employee_list.search_employee_by_id(
+            employee_data["employee_id"]
+        )
 
         if result_count == 0:
             logger.info(
@@ -153,10 +154,17 @@ def create_employee(authenticated_page):
                 f"{employee_data['employee_id']} still exists"
             )
 
+    elif result_count == 0:
+        logger.info(
+            f"CLEANUP SKIPPED: Employee "
+            f"{employee_data['employee_id']} already deleted"
+        )
+
     else:
-        logger.warning(
-            f"CLEANUP NOT REQUIRED: Employee "
-            f"{employee_data['employee_id']} not found"
+        logger.error(
+            f"CLEANUP FAILED: Employee "
+            f"{employee_data['employee_id']} has "
+            f"{result_count} matching records"
         )
 
 

@@ -105,7 +105,7 @@ def test_delete_employee(create_employee):
 
     expect(employee_list.employee_result_rows).to_have_count(1)
 
-    employee_list.delete_employee()
+    employee_list.delete_employee(employee_data["employee_id"])
 
     employee_list.search_employee_by_id(employee_data["employee_id"])
 

@@ -27,21 +27,21 @@ def test_ui_created_employee_visible_in_api(
 ):
     employee_data, _ = create_employee
 
-    response = orangehrm_api.get_employees(limit=100)
+    response = orangehrm_api.get_employees(
+        employee_id=employee_data["employee_id"]
+    )
 
     assert response.ok
 
     data = response.json()
 
-    matching_employees = [
-        employee
-        for employee in data["data"]
-        if employee["employeeId"] == employee_data["employee_id"]
-    ]
+    assert len(data["data"]) == 1
 
-    assert len(matching_employees) == 1
+    employee = data["data"][0]
 
-    emp_number = matching_employees[0]["empNumber"]
+    assert employee["employeeId"] == employee_data["employee_id"]
+
+    emp_number = employee["empNumber"]
 
     response = orangehrm_api.get_employee(emp_number)
 
@@ -91,21 +91,21 @@ def test_ui_deleted_employee_not_found_in_api(
 ):
     employee_data, employee_details = create_employee
 
-    response = orangehrm_api.get_employees(limit=100)
+    response = orangehrm_api.get_employees(
+        employee_id=employee_data["employee_id"]
+    )
 
     assert response.ok
 
     data = response.json()
 
-    matching_employees = [
-        employee
-        for employee in data["data"]
-        if employee["employeeId"] == employee_data["employee_id"]
-    ]
+    assert len(data["data"]) == 1
 
-    assert len(matching_employees) == 1
+    employee = data["data"][0]
 
-    emp_number = matching_employees[0]["empNumber"]
+    assert employee["employeeId"] == employee_data["employee_id"]
+
+    emp_number = employee["empNumber"]
 
     employee_list = employee_details.go_to_employee_list()
 
@@ -115,7 +115,9 @@ def test_ui_deleted_employee_not_found_in_api(
 
     expect(employee_list.employee_result_rows).to_have_count(1)
 
-    employee_list.delete_employee()
+    employee_list.delete_employee(
+        employee_data["employee_id"]
+    )
 
     employee_list.search_employee_by_id(
         employee_data["employee_id"]

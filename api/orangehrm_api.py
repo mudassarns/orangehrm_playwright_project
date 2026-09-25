@@ -56,7 +56,7 @@ class OrangeHRMApi:
 
         return response
 
-    def get_employees(self, limit=None, offset=None):
+    def get_employees(self, limit=None, offset=None, employee_id=None):
         params = {}
 
         if limit is not None:
@@ -64,6 +64,9 @@ class OrangeHRMApi:
 
         if offset is not None:
             params["offset"] = offset
+
+        if employee_id is not None:
+            params["employeeId"] = employee_id
 
         return self._request(
             "GET",
