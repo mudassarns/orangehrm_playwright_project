@@ -41,8 +41,16 @@ class AddEmployeePage:
         self.employee_id.fill(employee_id)
 
     def save(self):
-        self.save_button.click()
+        with self.page.expect_response(
+            lambda response:
+            "/web/index.php/api/v2/pim/employees" in response.url
+            and response.request.method == "POST"
+        ):
+            self.save_button.click()
 
         expect(self.success_toast).to_be_visible()
 
-        return EmployeeDetailsPage(self.page)
+        employee_details = EmployeeDetailsPage(self.page)
+        expect(employee_details.personal_details_tab).to_be_visible()
+
+        return employee_details

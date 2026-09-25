@@ -49,6 +49,12 @@ class EmployeeListPage:
 
         expect(self.employee_result_rows).to_have_count(result_count)
 
+        if result_count > 0:
+            matching_rows = self.employee_result_rows.filter(
+                has_text=employee_id
+            )
+            expect(matching_rows).to_have_count(result_count)
+
         return result_count
 
     def open_employee_details(self):

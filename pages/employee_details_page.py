@@ -45,9 +45,17 @@ class EmployeeDetailsPage:
         self.last_name.fill(last_name)
 
     def save(self):
-        self.save_button.click()
+        with self.page.expect_response(
+            lambda response:
+            "/web/index.php/api/v2/pim/employees/" in response.url
+            and "/personal-details" in response.url
+            and response.request.method == "PUT"
+        ):
+            self.save_button.click()
+
         expect(self.success_toast).to_be_visible()
-        
+        expect(self.employee_list_link).to_be_visible()
+
         return EmployeeDetailsPage(self.page)
 
     def go_to_employee_list(self):
