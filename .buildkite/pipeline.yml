@@ -1,0 +1,137 @@
+steps:
+  - label: "OrangeHRM Playwright Regression Tests"
+    secrets:
+      - QA_DB_PASSWORD
+      - QA_DB_NAME
+      - QA_DB_USER
+      - QA_DB_HOST
+      - QA_DB_PORT
+      - QA_ORANGEHRM_BASE_URL
+      - QA_ORANGEHRM_USERNAME
+      - QA_ORANGEHRM_PASSWORD
+      - QA_GMAIL_ADDRESS
+      - QA_GMAIL_APP_PASSWORD
+      - QA_GMAIL_OAUTH_CLIENT_JSON
+      - QA_GMAIL_TOKEN_JSON
+
+    artifact_paths:
+      - "reports/**/*"
+
+    command: |
+      set -e
+
+      cleanup() {
+        echo "=== Tearing down OrangeHRM Docker stack ==="
+        docker compose -f docker-orangehrm/docker-compose.yml down -v || true
+        echo "=== Docker stack teardown complete ==="
+      }
+
+      trap cleanup EXIT
+
+      echo "=== Starting OrangeHRM Docker stack ==="
+
+      export MARIADB_ROOT_PASSWORD="$$QA_DB_PASSWORD"
+      export MARIADB_DATABASE=""
+      export MARIADB_USER="orangehrm"
+      export MARIADB_PASSWORD="$$QA_DB_PASSWORD"
+
+      docker compose -f docker-orangehrm/docker-compose.yml up -d --wait
+
+      echo "=== Docker stack is ready ==="
+
+      echo "=== Installing OrangeHRM ==="
+
+      docker compose -f docker-orangehrm/docker-compose.yml exec -T \
+        -e CI_DB_HOST=mariadb \
+        -e CI_DB_PORT=3306 \
+        -e CI_DB_NAME="$$QA_DB_NAME" \
+        -e CI_DB_PASSWORD="$$QA_DB_PASSWORD" \
+        -e CI_ADMIN_USERNAME="$$QA_ORANGEHRM_USERNAME" \
+        -e CI_ADMIN_PASSWORD="$$QA_ORANGEHRM_PASSWORD" \
+        orangehrm php -r '
+          require "/var/www/html/src/vendor/autoload.php";
+
+          $$config = [
+            "database" => [
+              "hostName" => getenv("CI_DB_HOST"),
+              "hostPort" => 3306,
+              "databaseName" => getenv("CI_DB_NAME"),
+              "privilegedDatabaseUser" => "root",
+              "privilegedDatabasePassword" => getenv("CI_DB_PASSWORD"),
+              "useSameDbUserForOrangeHRM" => "y",
+              "orangehrmDatabaseUser" => null,
+              "orangehrmDatabasePassword" => null,
+              "isExistingDatabase" => "n",
+              "enableDataEncryption" => "n"
+            ],
+            "organization" => [
+              "name" => "Automation CI",
+              "country" => "US"
+            ],
+            "admin" => [
+              "adminUserName" => getenv("CI_ADMIN_USERNAME"),
+              "adminPassword" => getenv("CI_ADMIN_PASSWORD"),
+              "adminEmployeeFirstName" => "Automation",
+              "adminEmployeeLastName" => "Admin",
+              "workEmail" => "automation@example.com",
+              "contactNumber" => null,
+              "registrationConsent" => false
+            ],
+            "license" => ["agree" => "y"]
+          ];
+
+          file_put_contents(
+            "/var/www/html/installer/cli_install_config.yaml",
+            Symfony\Component\Yaml\Yaml::dump($$config, 4, 2)
+          );
+        '
+
+      docker compose -f docker-orangehrm/docker-compose.yml exec -T \
+        orangehrm php /var/www/html/installer/cli_install.php
+
+      echo "=== OrangeHRM installation complete ==="
+
+      echo "=== Verifying database ==="
+
+      docker compose -f docker-orangehrm/docker-compose.yml exec -T mariadb \
+        mariadb -u root -p"$$QA_DB_PASSWORD" "$$QA_DB_NAME" \
+        -e "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema='$$QA_DB_NAME';"
+
+      echo "=== Verifying OrangeHRM login endpoint ==="
+
+      HTTP_STATUS=$$(curl -o /dev/null -s -w "%{http_code}" \
+        "http://localhost:8080/web/index.php/auth/login")
+
+      echo "Login endpoint HTTP status: $$HTTP_STATUS"
+
+      if [ "$$HTTP_STATUS" -ne 200 ]; then
+        echo "=== ORANGEHRM CONTAINER LOGS ==="
+        docker compose -f docker-orangehrm/docker-compose.yml logs --tail=200 orangehrm || true
+        exit 1
+      fi
+
+      echo "=== Installing Python dependencies ==="
+
+      python3 -m pip install --upgrade pip
+      python3 -m pip install -r requirements.txt
+
+      echo "=== Installing Playwright browsers and dependencies ==="
+
+      python3 -m playwright install --with-deps
+
+      echo "=== Preparing Gmail credentials ==="
+
+      echo "$$QA_GMAIL_OAUTH_CLIENT_JSON" > gmail_oauth_client.json
+      echo "$$QA_GMAIL_TOKEN_JSON" > gmail_token.json
+
+      export QA_GMAIL_OAUTH_CLIENT_FILE="$$BUILDKITE_BUILD_CHECKOUT_PATH/gmail_oauth_client.json"
+      export QA_GMAIL_TOKEN_FILE="$$BUILDKITE_BUILD_CHECKOUT_PATH/gmail_token.json"
+
+      echo "=== Running Playwright regression tests ==="
+
+      pytest tests/test_ui.py -v -s -n 4
+
+      echo "=== Playwright regression tests completed ==="
+
+    agents:
+      queue: "default"
