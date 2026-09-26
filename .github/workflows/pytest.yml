@@ -133,7 +133,7 @@ jobs:
           echo "$QA_GMAIL_OAUTH_CLIENT_JSON" > "$QA_GMAIL_OAUTH_CLIENT_FILE"
           echo "$QA_GMAIL_TOKEN_JSON" > "$QA_GMAIL_TOKEN_FILE"
 
-          pytest -v -s
+          pytest -v -s -n 4
 
       - name: Upload Test Report
         if: always()
