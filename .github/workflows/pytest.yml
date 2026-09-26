@@ -113,14 +113,6 @@ jobs:
             exit 1
           fi
 
-      - name: Create Gmail credential files
-        env:
-          QA_GMAIL_OAUTH_CLIENT_JSON: ${{ secrets.QA_GMAIL_OAUTH_CLIENT_JSON }}
-          QA_GMAIL_TOKEN_JSON: ${{ secrets.QA_GMAIL_TOKEN_JSON }}
-        run: |
-          printf '%s' "$QA_GMAIL_OAUTH_CLIENT_JSON" > gmail_oauth_client.json
-          printf '%s' "$QA_GMAIL_TOKEN_JSON" > gmail_token.json
-
       - name: Run Tests
         env:
           QA_ORANGEHRM_BASE_URL: http://localhost:8080
@@ -133,10 +125,15 @@ jobs:
           QA_DB_PASSWORD: ${{ secrets.QA_DB_PASSWORD }}
           QA_GMAIL_ADDRESS: ${{ secrets.QA_GMAIL_ADDRESS }}
           QA_GMAIL_APP_PASSWORD: ${{ secrets.QA_GMAIL_APP_PASSWORD }}
+          QA_GMAIL_OAUTH_CLIENT_JSON: ${{ secrets.QA_GMAIL_OAUTH_CLIENT_JSON }}
+          QA_GMAIL_TOKEN_JSON: ${{ secrets.QA_GMAIL_TOKEN_JSON }}
           QA_GMAIL_OAUTH_CLIENT_FILE: ${{ github.workspace }}/gmail_oauth_client.json
           QA_GMAIL_TOKEN_FILE: ${{ github.workspace }}/gmail_token.json
         run: |
-          pytest tests/test_email.py -v -s
+          echo "$QA_GMAIL_OAUTH_CLIENT_JSON" > "$QA_GMAIL_OAUTH_CLIENT_FILE"
+          echo "$QA_GMAIL_TOKEN_JSON" > "$QA_GMAIL_TOKEN_FILE"
+
+          pytest -v -s
 
       - name: Upload Test Report
         if: always()
