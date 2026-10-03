@@ -132,6 +132,3 @@ steps:
       pytest tests/test_ui.py -v -s -n 4
 
       echo "=== Playwright regression tests completed ==="
-
-    agents:
-      queue: "default"
