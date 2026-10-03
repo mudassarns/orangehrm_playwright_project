@@ -28,6 +28,11 @@ steps:
 
       trap cleanup EXIT
 
+      echo "=== Installing MariaDB development dependencies ==="
+
+      sudo apt-get update -y
+      sudo apt-get install -y libmariadb-dev python3.10-dev
+
       echo "=== Starting OrangeHRM Docker stack ==="
 
       export MARIADB_ROOT_PASSWORD="$$QA_DB_PASSWORD"
