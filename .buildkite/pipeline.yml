@@ -134,6 +134,6 @@ steps:
 
       echo "=== Running Playwright regression tests ==="
 
-      pytest tests/test_ui.py tests/test_api.py tests/test_hybrid.py tests/test_database.py -v -s -n 4
+      pytest -v -s -n 4
 
       echo "=== Playwright regression tests completed ==="
