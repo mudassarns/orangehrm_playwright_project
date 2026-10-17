@@ -1,7 +1,38 @@
+# Local environment files (allow the safe template)
 .env
-.venv/
-__pycache__/
-.pytest_cache/
+.env.*
+!.env.example
 
+# Gmail OAuth client, token, and other credentials
+gmail_oauth_client.json
+gmail_token*.json
+client_secret*.json
+credentials.json
+token.json
+*.pem
+*.key
+
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Pytest output and artifacts
+.pytest_cache/
 reports/
 test-results/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Editors and operating system
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
